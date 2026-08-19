@@ -1,0 +1,8 @@
+sqllogictest pinned commit: c67f97bf3ca7e590d12e073408bcacaf2ff0f3a0
+repo: https://github.com/gregrahn/sqllogictest
+vendored_at: 2026-08-19
+note: minimal vendored tree for the sql-db-0819 build: src/ (runner + driver), test/select1-5,
+      test/evidence, COPYRIGHT.md, about.wiki. Excluded: sqlite3.c/sqlite3.h/slt_sqlite.c/
+      slt_odbc3.c (built-in SQLite/ODBC engines compiled out; the SQLite amalgamation trips
+      the secrets gate's generic-api-key rule on benign C struct-member expressions), all
+      run-all* launcher scripts, proto/, logo.gif, Windows Makefiles, generated test/random+index.

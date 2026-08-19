@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sql-db-0819"
+version = "0.1.0"
+description = "A minimal SQL engine driven end-to-end by the official sqllogictest runner"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+sql-db-0819 = "sql_db_0819.cli:main"
+
+[tool.setuptools]
+packages = ["sql_db_0819"]

@@ -1,0 +1,6 @@
+# build artifacts
+third_party/sqllogictest/src/*.o
+third_party/sqllogictest/src/sqllogictest
+__pycache__/
+*.pyc
+*.egg-info/
