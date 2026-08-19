@@ -1,0 +1,8 @@
+# Negative fixture (acceptance a3): expected values are deliberately WRONG.
+# The engine really returns 1 for SELECT 1; the runner must report the
+# mismatch and exit non-zero. `make negative-test` asserts exactly that.
+
+query I nosort
+SELECT 1
+----
+2
