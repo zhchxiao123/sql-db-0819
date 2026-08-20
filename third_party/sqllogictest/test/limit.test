@@ -1,0 +1,110 @@
+# limit.test — LIMIT/OFFSET feature anchor (substituted at pinned commit;
+# see README.md). Generated with the reference SQLite engine via the
+# sqllogictest runner completion mode.
+
+statement ok
+CREATE TABLE t1(a INTEGER, b INTEGER, c TEXT);
+
+
+statement ok
+INSERT INTO t1 VALUES(5, 50, 'five');
+INSERT INTO t1 VALUES(1, 10, 'one');
+INSERT INTO t1 VALUES(4, 40, 'four');
+INSERT INTO t1 VALUES(2, 20, 'two');
+INSERT INTO t1 VALUES(6, 60, 'six');
+INSERT INTO t1 VALUES(3, 30, 'three');
+
+
+query I rowsort
+SELECT a FROM t1 ORDER BY a LIMIT 3
+----
+1
+2
+3
+
+query I rowsort
+SELECT a FROM t1 ORDER BY a LIMIT 3 OFFSET 2
+----
+3
+4
+5
+
+query I rowsort
+SELECT a FROM t1 ORDER BY a LIMIT 2, 3
+----
+3
+4
+5
+
+query I rowsort
+SELECT a FROM t1 ORDER BY a LIMIT 0
+----
+
+query I rowsort
+SELECT a FROM t1 ORDER BY a LIMIT 10
+----
+1
+2
+3
+4
+5
+6
+
+query I rowsort
+SELECT a FROM t1 ORDER BY a LIMIT 10 OFFSET 4
+----
+5
+6
+
+query I rowsort
+SELECT a FROM t1 ORDER BY a LIMIT 10 OFFSET 10
+----
+
+query I rowsort
+SELECT a FROM t1 ORDER BY a DESC LIMIT 2
+----
+5
+6
+
+query T rowsort
+SELECT c FROM t1 ORDER BY a LIMIT 4
+----
+four
+one
+three
+two
+
+query II rowsort
+SELECT a, b FROM t1 ORDER BY b LIMIT 3
+----
+1
+10
+2
+20
+3
+30
+
+query I rowsort
+SELECT a FROM t1 WHERE a > 2 ORDER BY a LIMIT 2
+----
+3
+4
+
+query I rowsort
+SELECT a FROM t1 ORDER BY a LIMIT 2, 10
+----
+3
+4
+5
+6
+
+query I rowsort
+SELECT a FROM t1 ORDER BY a LIMIT -1
+----
+1
+2
+3
+4
+5
+6
+

@@ -26,7 +26,9 @@ third_party/sqllogictest/
 ├── about.wiki       upstream documentation
 ├── src/             runner build: sqllogictest.c, sqllogictest.h, md5.c,
 │                    Makefile.no-odbc, slt_subprocess.c (our engine driver)
-└── test/            select1-5.test + evidence/ (the pinned sqllogictest corpus)
+└── test/            select1-5.test, the feature anchors (orderby/limit/
+                     distinct/cast/null — see below), evidence/, and
+                     random/expr/ (the pinned random-expression corpus)
 ```
 
 Excluded from the vendored tree (documented in PIN.txt):
@@ -39,7 +41,8 @@ Excluded from the vendored tree (documented in PIN.txt):
   names look like credential keys, so it is deliberately not vendored.
 - `run-all-{mssql,pgsql,odbc}.bat` and the other Windows launcher scripts,
   `proto/`, `logo.gif`, the Windows Makefiles, and the generated suites
-  `test/random` / `test/index`.
+  `test/index` and `test/random` **except** `test/random/expr` (the expression
+  slice needs that one generated suite; it is vendored in full).
 
 To re-vendor the pinned tree from scratch:
 
@@ -51,6 +54,11 @@ cp COPYRIGHT.md about.wiki /tmp/slt-min/
 cp src/sqllogictest.c src/sqllogictest.h src/md5.c src/Makefile.no-odbc /tmp/slt-min/src/
 cp test/select1.test test/select2.test test/select3.test test/select4.test test/select5.test /tmp/slt-min/test/
 cp -r test/evidence /tmp/slt-min/test/
+cp -r test/random/expr /tmp/slt-min/test/random/  # full random/expr suite (120 files)
+# the feature anchors (test/orderby.test, limit, distinct, cast, null) do NOT
+# exist at the pinned commit; they are substituted with locally-authored files
+# covering the same features, generated and verified with the reference SQLite
+# engine (see "Feature anchors" below).
 # then copy the tree into third_party/sqllogictest/ and re-apply the driver:
 #   src/slt_subprocess.c  (new file, engine driver)
 #   src/sqllogictest.c    (+ guarded slt_sqlite.c/slt_odbc3.c includes; + registerSubprocess();
@@ -66,6 +74,7 @@ sql_db_0819/cli.py             protocol CLI spoken by the runner's engine driver
 tests/test_engine.py           engine unit tests (stdlib unittest)
 third_party/sqllogictest/      pinned official sqllogictest (minimal vendor + driver)
 tools/run_sqllogictest.sh      per-file pass/fail wrapper around the runner
+tools/run-acceptance.sh        acceptance runner: select1-5 + anchors + random/expr
 tools/run_negative_test.sh     negative verification (a3)
 test/negative.test             deliberately-wrong expectations fixture
 Makefile                       build/unit/test/negative-test entry points
@@ -78,6 +87,7 @@ Makefile                       build/unit/test/negative-test entry points
 | `make build`         | Build the official sqllogictest runner binary (needs gcc + make)      |
 | `make unit`          | Run engine unit tests (`python3 -m unittest discover -s tests -v`)    |
 | `make test`          | Build, then run the official runner against this engine on `test/select1.test` and `test/select2.test` from the pinned commit; prints a per-file PASS/FAIL line with the runner's error/skip summary; exit 0 only if both pass with 0 skips |
+| `bash tools/run-acceptance.sh` | Build first (`make build`), then run **every acceptance target** through the official runner: select1-5, the five feature anchors, and all 120 `test/random/expr/*.test` files; one PASS/FAIL line per file; exit 0 only if every file reports 0 errors (see `tools/run-acceptance.sh`) |
 | `make negative-test` | Run the runner against `test/negative.test` (wrong expected values); asserts the runner reports failure and exits non-zero |
 | `make clean`         | Remove build artifacts                                                 |
 
@@ -113,14 +123,39 @@ pin section), so the runner registers exactly one engine, `sql-db-0819`.
 
 ## Engine scope (this slice)
 
-`CREATE TABLE`, `INSERT INTO ... VALUES`, `SELECT` with `WHERE`, `ORDER BY`,
-expressions (`+ - * /`, comparisons, `AND/OR/NOT`, `BETWEEN` / `NOT BETWEEN`,
-`IS [NOT] NULL`, searched and simple `CASE`, `abs()`, `coalesce()`), the
-aggregates `count(*)`/`count(expr)`/`avg()`/`min()`/`max()`/`sum()`, scalar
-subqueries, correlated subqueries and `EXISTS`. Semantics match SQLite (the
-reference the sqllogictest expectations are generated from): INTEGER division
-truncates toward zero, NULL propagates, `AND/OR/NOT` use three-valued logic,
-`avg()` ignores NULLs and returns REAL, NULLs sort first ascending.
+`CREATE TABLE` (typed columns with optional sizes and `PRIMARY KEY`
+constraints; `CREATE [UNIQUE] INDEX` / `DROP INDEX` accepted as no-ops),
+`INSERT INTO ... VALUES` (reordered column lists, column-affinity coercion),
+`SELECT` with `SELECT ALL/DISTINCT`, `*` and `tN.*` expansion, column aliases,
+multi-table `FROM t1, t2, ...` (comma joins with equality-constraint
+optimization), `WHERE`, `ORDER BY` (positional / alias / expression keys,
+`ASC`/`DESC`, `NULLS FIRST/LAST`), `LIMIT`/`OFFSET` (all three spellings),
+and compound selects `UNION [ALL]` / `EXCEPT` / `INTERSECT`.
+
+Expressions: arithmetic (`+ - * / % DIV`; `/` and `%` yield NULL on a zero
+divisor, matching SQLite), comparisons (`= != < <= > >=` with SQLite type and
+affinity semantics), logical (`AND OR NOT` with three-valued logic), string
+concatenation `||`, `LIKE` (case-insensitive, `%`/`_` wildcards, `ESCAPE`),
+`IN` / `NOT IN` (lists and subqueries), `BETWEEN`/`NOT BETWEEN`, `IS [NOT]
+NULL`, searched and simple `CASE`, `CAST(... AS INTEGER/SIGNED/UNSIGNED/
+REAL/NUMERIC/TEXT/...)`, scalar functions `abs()`, `coalesce()`, `nullif()`,
+`ifnull()`, and aggregates `count(*)`/`count(expr)`/`count(ALL expr)`/
+`count(DISTINCT expr)`/`sum()`/`avg()`/`min()`/`max()` usable **anywhere** in
+an expression (inside `CASE` arms, function arguments, arithmetic). Semantics
+match SQLite, the reference the sqllogictest expectations are generated from.
+
+## Feature anchors (substitution)
+
+The pinned commit has no `test/orderby.test`, `test/limit.test`,
+`test/distinct.test`, `test/cast.test`, or `test/null.test`. Per the slice
+requirement ("if an anchor file is absent at the pinned commit, substitute the
+equivalent file covering the same feature"), those five files are locally
+authored equivalents: each contains a small table plus queries exercising the
+feature (ordering modes, limit spellings, distinctness, casts, NULL
+semantics). Expected values were generated by the **reference SQLite engine**
+via the official runner's completion mode and re-verified against it before
+being committed, so the expectations are authoritative SQLite behavior.
+The substitution is listed in the PR description / `result.json`.
 
 ## Secrets
 

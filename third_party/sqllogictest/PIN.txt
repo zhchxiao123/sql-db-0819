@@ -1,8 +1,14 @@
 sqllogictest pinned commit: c67f97bf3ca7e590d12e073408bcacaf2ff0f3a0
 repo: https://github.com/gregrahn/sqllogictest
-vendored_at: 2026-08-19
+vendored_at: 2026-08-19 (extended 2026-08-20 for the expression slice)
 note: minimal vendored tree for the sql-db-0819 build: src/ (runner + driver), test/select1-5,
-      test/evidence, COPYRIGHT.md, about.wiki. Excluded: sqlite3.c/sqlite3.h/slt_sqlite.c/
+      test/evidence, test/random/expr (full generated random-expression suite, 120 files),
+      COPYRIGHT.md, about.wiki. Excluded: sqlite3.c/sqlite3.h/slt_sqlite.c/
       slt_odbc3.c (built-in SQLite/ODBC engines compiled out; the SQLite amalgamation trips
       the secrets gate's generic-api-key rule on benign C struct-member expressions), all
-      run-all* launcher scripts, proto/, logo.gif, Windows Makefiles, generated test/random+index.
+      run-all* launcher scripts, proto/, logo.gif, Windows Makefiles, test/index, and the
+      rest of test/random (aggregates/groupby/select/... not needed by this slice).
+note2: test/orderby.test, test/limit.test, test/distinct.test, test/cast.test, test/null.test
+      do NOT exist at the pinned commit. They are locally authored feature anchors whose
+      expected values were generated and verified with the reference SQLite engine via the
+      official runner's completion mode (see README "Feature anchors").
