@@ -1,0 +1,262 @@
+# null.test — NULL semantics feature anchor (substituted at pinned commit;
+# see README.md). Generated with the reference SQLite engine via the
+# sqllogictest runner completion mode.
+
+statement ok
+CREATE TABLE t1(a INTEGER, b INTEGER, c TEXT);
+
+
+statement ok
+INSERT INTO t1 VALUES(1, 10, 'one');
+INSERT INTO t1 VALUES(2, NULL, 'two');
+INSERT INTO t1 VALUES(NULL, 30, 'null-a');
+INSERT INTO t1 VALUES(NULL, NULL, 'both-null');
+
+
+query I rowsort
+SELECT a FROM t1 WHERE a IS NULL
+----
+NULL
+NULL
+
+query I rowsort
+SELECT a FROM t1 WHERE a IS NOT NULL
+----
+1
+2
+
+query I rowsort
+SELECT a FROM t1 WHERE a IS NULL AND b IS NULL
+----
+NULL
+
+query I rowsort
+SELECT a FROM t1 WHERE a IS NULL OR b IS NULL
+----
+2
+NULL
+NULL
+
+query I rowsort
+SELECT a FROM t1 WHERE NOT (a IS NULL)
+----
+1
+2
+
+query I rowsort
+SELECT a FROM t1 WHERE a = 1
+----
+1
+
+query I rowsort
+SELECT a FROM t1 WHERE a <> 1
+----
+2
+
+query I rowsort
+SELECT a FROM t1 WHERE a > 1
+----
+2
+
+query I rowsort
+SELECT a FROM t1 WHERE a < 1 OR a IS NULL
+----
+NULL
+NULL
+
+query I rowsort
+SELECT 1 + NULL
+----
+NULL
+
+query I rowsort
+SELECT 1 * NULL
+----
+NULL
+
+query I rowsort
+SELECT 1 / NULL
+----
+NULL
+
+query I rowsort
+SELECT NULL = NULL
+----
+NULL
+
+query I rowsort
+SELECT NULL <> NULL
+----
+NULL
+
+query I rowsort
+SELECT NULL IS NULL
+----
+1
+
+query I rowsort
+SELECT NULL IS NOT NULL
+----
+0
+
+query I rowsort
+SELECT NULL AND 1
+----
+NULL
+
+query I rowsort
+SELECT NULL OR 1
+----
+1
+
+query I rowsort
+SELECT NULL AND 0
+----
+0
+
+query I rowsort
+SELECT NULL OR 0
+----
+NULL
+
+query I rowsort
+SELECT NOT NULL
+----
+NULL
+
+query I rowsort
+SELECT 1 IN (1, 2, NULL)
+----
+1
+
+query I rowsort
+SELECT 3 IN (1, 2, NULL)
+----
+NULL
+
+query I rowsort
+SELECT NULL IN (1, 2)
+----
+NULL
+
+query I rowsort
+SELECT NULL IN (1, 2, NULL)
+----
+NULL
+
+query I rowsort
+SELECT 3 NOT IN (1, 2)
+----
+1
+
+query I rowsort
+SELECT NULL NOT IN (1, 2)
+----
+NULL
+
+query I rowsort
+SELECT COALESCE(NULL, NULL, 7)
+----
+7
+
+query I rowsort
+SELECT COALESCE(NULL, NULL, NULL)
+----
+NULL
+
+query I rowsort
+SELECT IFNULL(NULL, 5)
+----
+5
+
+query I rowsort
+SELECT NULLIF(1, 1)
+----
+NULL
+
+query I rowsort
+SELECT NULLIF(1, 2)
+----
+1
+
+query I rowsort
+SELECT NULLIF(NULL, 1)
+----
+NULL
+
+query T rowsort
+SELECT c FROM t1 WHERE b IS NULL ORDER BY c
+----
+both-null
+two
+
+query T rowsort
+SELECT c FROM t1 ORDER BY a NULLS FIRST
+----
+both-null
+null-a
+one
+two
+
+query T rowsort
+SELECT c FROM t1 ORDER BY a NULLS LAST
+----
+both-null
+null-a
+one
+two
+
+query I rowsort
+SELECT COUNT(*) FROM t1 WHERE a IS NULL
+----
+2
+
+query I rowsort
+SELECT COUNT(a) FROM t1
+----
+2
+
+query I rowsort
+SELECT SUM(a) FROM t1
+----
+3
+
+query I rowsort
+SELECT MIN(a) FROM t1
+----
+1
+
+query I rowsort
+SELECT MAX(b) FROM t1
+----
+30
+
+query I rowsort
+SELECT b FROM t1 WHERE b IS NOT NULL ORDER BY b
+----
+10
+30
+
+query T rowsort
+SELECT a || 'x' FROM t1 WHERE a IS NOT NULL ORDER BY a
+----
+1x
+2x
+
+query T rowsort
+SELECT 'v' || NULL
+----
+NULL
+
+query I rowsort
+SELECT a FROM t1 WHERE b IN (10, 30) ORDER BY a
+----
+1
+NULL
+
+query I rowsort
+SELECT a FROM t1 WHERE b NOT IN (10, 30) OR b IS NULL ORDER BY a
+----
+2
+NULL
+

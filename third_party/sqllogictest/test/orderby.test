@@ -1,0 +1,155 @@
+# orderby.test — ORDER BY feature anchor (substituted at pinned commit;
+# see README.md). Generated with the reference SQLite engine via the
+# sqllogictest runner completion mode.
+
+statement ok
+CREATE TABLE t1(a INTEGER, b INTEGER, c TEXT);
+
+
+statement ok
+INSERT INTO t1 VALUES(3, 30, 'thirty');
+INSERT INTO t1 VALUES(1, NULL, 'one');
+INSERT INTO t1 VALUES(2, 20, 'two');
+INSERT INTO t1 VALUES(NULL, 10, 'null-a');
+INSERT INTO t1 VALUES(2, 10, 'two-ten');
+INSERT INTO t1 VALUES(1, 10, 'one-ten');
+
+
+query I rowsort
+SELECT a FROM t1 ORDER BY a
+----
+1
+1
+2
+2
+3
+NULL
+
+query I rowsort
+SELECT a FROM t1 ORDER BY a DESC
+----
+1
+1
+2
+2
+3
+NULL
+
+query II rowsort
+SELECT a, b FROM t1 ORDER BY a, b
+----
+12 values hashing to c4972f185582bf2e4076a06eba8756f0
+
+query II rowsort
+SELECT a, b FROM t1 ORDER BY a DESC, b ASC
+----
+12 values hashing to c4972f185582bf2e4076a06eba8756f0
+
+query II rowsort
+SELECT a, b FROM t1 ORDER BY b, a
+----
+12 values hashing to c4972f185582bf2e4076a06eba8756f0
+
+query T rowsort
+SELECT c FROM t1 ORDER BY c
+----
+null-a
+one
+one-ten
+thirty
+two
+two-ten
+
+query T rowsort
+SELECT c FROM t1 ORDER BY c DESC
+----
+null-a
+one
+one-ten
+thirty
+two
+two-ten
+
+query I rowsort
+SELECT a AS col1 FROM t1 ORDER BY col1
+----
+1
+1
+2
+2
+3
+NULL
+
+query I rowsort
+SELECT a AS col1 FROM t1 ORDER BY col1 DESC
+----
+1
+1
+2
+2
+3
+NULL
+
+query I rowsort
+SELECT a + b AS s FROM t1 WHERE a IS NOT NULL AND b IS NOT NULL ORDER BY s
+----
+11
+12
+22
+33
+
+query I rowsort
+SELECT a FROM t1 ORDER BY 1
+----
+1
+1
+2
+2
+3
+NULL
+
+query I rowsort
+SELECT a FROM t1 ORDER BY 1 DESC
+----
+1
+1
+2
+2
+3
+NULL
+
+query II rowsort
+SELECT a, b FROM t1 ORDER BY 1 DESC, 2 ASC
+----
+12 values hashing to c4972f185582bf2e4076a06eba8756f0
+
+query I rowsort
+SELECT a FROM t1 WHERE b IS NULL ORDER BY a
+----
+1
+
+query T rowsort
+SELECT c FROM t1 WHERE a IS NULL ORDER BY c
+----
+null-a
+
+query T rowsort
+SELECT c FROM t1 ORDER BY a NULLS FIRST
+----
+null-a
+one
+one-ten
+thirty
+two
+two-ten
+
+query T rowsort
+SELECT c FROM t1 ORDER BY a NULLS LAST
+----
+null-a
+one
+one-ten
+thirty
+two
+two-ten
+

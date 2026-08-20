@@ -1,0 +1,108 @@
+# distinct.test — DISTINCT feature anchor (substituted at pinned commit;
+# see README.md). Generated with the reference SQLite engine via the
+# sqllogictest runner completion mode.
+
+statement ok
+CREATE TABLE t1(a INTEGER, b INTEGER, c TEXT);
+
+
+statement ok
+INSERT INTO t1 VALUES(1, 10, 'x');
+INSERT INTO t1 VALUES(1, 10, 'x');
+INSERT INTO t1 VALUES(1, 20, 'y');
+INSERT INTO t1 VALUES(2, 20, 'y');
+INSERT INTO t1 VALUES(2, 30, NULL);
+INSERT INTO t1 VALUES(NULL, 30, 'z');
+INSERT INTO t1 VALUES(NULL, NULL, 'z');
+
+
+query I rowsort
+SELECT DISTINCT a FROM t1
+----
+1
+2
+NULL
+
+query II rowsort
+SELECT DISTINCT a, b FROM t1
+----
+12 values hashing to 6ee1ad8f99d928a1f44cadd0432c4183
+
+query T rowsort
+SELECT DISTINCT c FROM t1
+----
+NULL
+x
+y
+z
+
+query I rowsort
+SELECT DISTINCT b FROM t1 ORDER BY b
+----
+10
+20
+30
+NULL
+
+query I rowsort
+SELECT DISTINCT b FROM t1 ORDER BY b DESC
+----
+10
+20
+30
+NULL
+
+query II rowsort
+SELECT DISTINCT a, b FROM t1 ORDER BY a, b
+----
+12 values hashing to 6ee1ad8f99d928a1f44cadd0432c4183
+
+query T rowsort
+SELECT DISTINCT c FROM t1 WHERE a IS NOT NULL ORDER BY c
+----
+NULL
+x
+y
+
+query I rowsort
+SELECT DISTINCT a FROM t1 WHERE a IS NOT NULL ORDER BY a DESC
+----
+1
+2
+
+query II rowsort
+SELECT DISTINCT a, b FROM t1 WHERE c IS NOT NULL
+----
+10 values hashing to fe59f232723a167f482d7138d8de6b80
+
+query T rowsort
+SELECT DISTINCT c FROM t1 ORDER BY c NULLS LAST
+----
+NULL
+x
+y
+z
+
+query I rowsort
+SELECT COUNT(DISTINCT a) FROM t1
+----
+2
+
+query I rowsort
+SELECT COUNT(DISTINCT b) FROM t1
+----
+3
+
+query II rowsort
+SELECT DISTINCT a, b FROM t1 WHERE a = 1
+----
+1
+10
+1
+20
+
+query T rowsort
+SELECT DISTINCT c FROM t1 WHERE c = 'x'
+----
+x
+
